@@ -194,13 +194,24 @@ def _get_youtube_transcript(url: str) -> str | None:
     vid = _yt_video_id(url)
     if not vid:
         return None
+    # Try all available languages/transcripts
     try:
-        from youtube_transcript_api import YouTubeTranscriptApi
-        parts = YouTubeTranscriptApi.get_transcript(vid)
-        return " ".join(p["text"] for p in parts)
+        from youtube_transcript_api import YouTubeTranscriptApi, TranscriptList
+        transcript_list = YouTubeTranscriptApi.list_transcripts(vid)
+        # Try manual first, then auto-generated
+        for fetch_fn in [
+            lambda tl: tl.find_manually_created_transcript(['en']),
+            lambda tl: tl.find_generated_transcript(['en']),
+            lambda tl: next(iter(tl)),
+        ]:
+            try:
+                parts = fetch_fn(transcript_list).fetch()
+                return " ".join(p["text"] for p in parts)
+            except Exception:
+                continue
     except Exception:
         pass
-    # Fallback: yt-dlp subtitle download
+    # Fallback: yt-dlp subtitle download (no browser cookies — works on cloud)
     try:
         import subprocess, tempfile, glob
         with tempfile.TemporaryDirectory() as td:
@@ -209,7 +220,6 @@ def _get_youtube_transcript(url: str) -> str | None:
                 "--write-auto-sub", "--skip-download",
                 "--sub-format", "vtt",
                 "--output", f"{td}/sub",
-                "--cookies-from-browser", "chrome",
                 "--quiet", url,
             ]
             subprocess.run(cmd, timeout=60, capture_output=True)
