@@ -236,8 +236,22 @@ def _get_youtube_transcript(url: str) -> str | None:
     return None
 
 def _get_webpage_text(url: str, max_chars: int = 12000) -> str:
-    headers = {"User-Agent": "Mozilla/5.0"}
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Referer": "https://www.google.com/",
+        "DNT": "1",
+    }
     r = requests.get(url, headers=headers, timeout=15)
+    # Detect bot-protection pages
+    if any(phrase in r.text for phrase in ["Enable JavaScript", "Just a moment", "cf-browser-verification"]):
+        raise RuntimeError("Site blocked scraping (bot protection). Try a different quotes source.")
     soup = BeautifulSoup(r.text, "html.parser")
     for tag in soup(["script", "style", "nav", "footer", "header"]):
         tag.decompose()
