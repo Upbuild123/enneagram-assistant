@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: transparent; font-family: Inter, sans-serif; }
+
+#paste-zone {
+  width: 100%;
+  min-height: 200px;
+  background: #12101a;
+  border: 1px solid rgba(168,85,247,0.3);
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+  color: #e2d9f3;
+  font-size: 0.88rem;
+  outline: none;
+  line-height: 1.7;
+  overflow-y: auto;
+  cursor: text;
+}
+#paste-zone:focus {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 2px rgba(168,85,247,0.2);
+}
+#paste-zone:empty:before {
+  content: attr(data-placeholder);
+  color: #6b7280;
+  pointer-events: none;
+}
+#status {
+  font-size: 0.76rem;
+  color: #a78bfa;
+  margin-top: 0.45rem;
+  min-height: 1.2rem;
+}
+</style>
+</head>
+<body>
+<div id="paste-zone"
+     contenteditable="true"
+     data-placeholder="Paste a forwarded email or any URLs here…"></div>
+<div id="status"> </div>
+
+<script>
+// Streamlit component protocol (inline — no external library needed)
+function stReady()        { window.parent.postMessage({ type: "streamlit:componentReady", apiVersion: 1 }, "*"); }
+function stHeight(h)      { window.parent.postMessage({ type: "streamlit:setFrameHeight", height: h }, "*"); }
+function stValue(val)     { window.parent.postMessage({ type: "streamlit:setComponentValue", value: val, dataType: "json" }, "*"); }
+
+stReady();
+stHeight(250);
+
+const zone   = document.getElementById('paste-zone');
+const status = document.getElementById('status');
+
+function extractLinks() {
+  const seen  = new Set();
+  const links = [];
+
+  // Hyperlinks from rich-text paste
+  zone.querySelectorAll('a[href]').forEach(a => {
+    const href  = (a.getAttribute('href') || '').trim();
+    const label = (a.innerText || '').trim();
+    if (href.startsWith('http') && !seen.has(href)) {
+      seen.add(href);
+      links.push({ url: href, label: label || href });
+    }
+  });
+
+  // Bare URLs in plain text
+  const walker = document.createTreeWalker(zone, NodeFilter.SHOW_TEXT);
+  const urlRe  = /https?:\/\/[^\s<>"')\]]+/g;
+  let node;
+  while ((node = walker.nextNode())) {
+    let m;
+    while ((m = urlRe.exec(node.textContent)) !== null) {
+      const u = m[0].replace(/[.,;)]+$/, '');
+      if (!seen.has(u)) {
+        seen.add(u);
+        links.push({ url: u, label: u });
+      }
+    }
+  }
+  return links;
+}
+
+// Only send to Streamlit on actual user interaction
+function onUserInput() {
+  const links = extractLinks();
+  if (links.length) {
+    status.textContent = links.length + ' link' + (links.length !== 1 ? 's' : '') + ' detected — click Analyse to run.';
+    status.style.color = '#a78bfa';
+  } else {
+    status.textContent = 'No links detected yet.';
+    status.style.color = '#6b7280';
+  }
+  stValue(links);
+}
+
+zone.addEventListener('paste',  () => setTimeout(onUserInput, 80));
+zone.addEventListener('keyup',  onUserInput);
+
+// Handle render events — just reaffirm height, do NOT send a value
+window.addEventListener('message', e => {
+  if (e.data && e.data.type === 'streamlit:render') {
+    stHeight(250);
+  }
+});
+</script>
+</body>
+</html>
