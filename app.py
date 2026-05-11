@@ -445,18 +445,8 @@ else:
 # RESULTS
 # ══════════════════════════════════════════════════════════════════════════════
 def _copy_button(text: str, key: str) -> None:
-    escaped = text.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
-    import streamlit.components.v1 as components
-    components.html(f"""
-    <button onclick="navigator.clipboard.writeText(`{escaped}`).then(() => {{
-        this.textContent = 'Copied!';
-        setTimeout(() => this.textContent = 'Copy', 1500);
-    }})" style="
-        cursor:pointer; background:#fff; border:1px solid #d1d5db;
-        border-radius:6px; padding:0.3rem 0.8rem; font-size:0.78rem;
-        font-family:Inter,sans-serif; color:#333; font-weight:500;
-    ">Copy</button>
-    """, height=40)
+    with st.expander("Copy text", expanded=False):
+        st.code(text, language=None)
 
 if st.session_state.results:
     st.divider()
