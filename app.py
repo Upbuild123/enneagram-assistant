@@ -359,7 +359,6 @@ st.divider()
 # STEP 1 — INPUT
 # ══════════════════════════════════════════════════════════════════════════════
 st.markdown('<div class="step-label">Step 1 — Paste links</div>', unsafe_allow_html=True)
-st.caption("Open the email in your browser, use Claude's browser tool with the prompt **\"list all the links in this email with their URLs\"**, then paste the output below.")
 
 raw = st.text_area("Links", placeholder="1999 Deep End of the Ocean Interview (3m3) — https://www.youtube.com/watch?v=...\nQuotes — https://www.brainyquote.com/...",
                    height=160, label_visibility="collapsed")
