@@ -52,7 +52,7 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-.block-container { padding-top: 2rem; padding-bottom: 4rem; max-width: 780px; }
+.block-container { padding-top: 0.5rem; padding-bottom: 4rem; max-width: 780px; }
 .stApp { background-color: #ffffff; }
 
 h1 { font-size: 1.7rem !important; font-weight: 700 !important; color: #111 !important; letter-spacing: -0.02em; }
